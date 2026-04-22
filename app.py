@@ -1,110 +1,89 @@
 import streamlit as st
-import openai
+from openai import OpenAI
 
 # ==============================
 
-# PAGE CONFIG
+# SETUP
 
 # ==============================
 
-st.set_page_config(
-page_title="AI Exam Paper Generator",
-page_icon="🧠",
-layout="wide"
-)
+st.set_page_config(page_title="AI Exam Generator", layout="wide")
 
 st.title("🧠 AI Assistant for Teachers")
 st.subheader("📄 Exam Paper Generator")
 
-# ==============================
+# Load API Key
 
-# LOAD API KEY FROM SECRETS
-
-# ==============================
-
-openai.api_key = st.secrets["OPENAI_API_KEY"]
+client = OpenAI(api_key=st.secrets["OPENAI_API_KEY"])
 
 # ==============================
 
-# INPUT FORM
+# INPUTS
 
 # ==============================
 
-st.sidebar.header("📌 Input Details")
+st.sidebar.header("Input Details")
 
 subject = st.sidebar.text_input("Subject", "Computer Science")
-topics = st.sidebar.text_area("Topics (comma separated)", "OOP, Data Structures")
+topics = st.sidebar.text_area("Topics", "OOP, Data Structures")
+difficulty = st.sidebar.selectbox("Difficulty", ["Easy", "Medium", "Hard"])
 
-difficulty = st.sidebar.selectbox(
-"Difficulty Level",
-["Easy", "Medium", "Hard"]
-)
-
-mcq_count = st.sidebar.slider("Number of MCQs", 1, 20, 5)
+mcq_count = st.sidebar.slider("MCQs", 1, 20, 5)
 short_count = st.sidebar.slider("Short Questions", 1, 10, 3)
 long_count = st.sidebar.slider("Long Questions", 1, 5, 2)
 
-generate_btn = st.sidebar.button("🚀 Generate Exam Paper")
+generate = st.sidebar.button("Generate Paper")
 
 # ==============================
 
-# PROMPT FUNCTION
+# PROMPT FUNCTION (NO ERROR VERSION)
 
 # ==============================
 
 def generate_prompt():
-prompt = f"""
-You are an expert academic assistant and professional exam paper setter with deep knowledge of Bloom's Taxonomy.
+prompt = "You are an expert exam paper generator.\n\n"
+prompt += f"Subject: {subject}\n"
+prompt += f"Topics: {topics}\n"
+prompt += f"Difficulty: {difficulty}\n"
+prompt += f"MCQs: {mcq_count}\n"
+prompt += f"Short Questions: {short_count}\n"
+prompt += f"Long Questions: {long_count}\n\n"
 
-Generate a COMPLETE exam paper.
+```
+prompt += "Create:\n"
+prompt += "1. MCQs with 4 options and correct answer + Bloom level\n"
+prompt += "2. Short questions with answers + Bloom level\n"
+prompt += "3. Long questions with detailed answers + Bloom level\n\n"
 
-Subject: {subject}
-Topics: {topics}
-Difficulty Level: {difficulty}
-MCQs: {mcq_count}
-Short Questions: {short_count}
-Long Questions: {long_count}
+prompt += "Format:\n"
+prompt += "Section A: MCQs\n"
+prompt += "Section B: Short Questions\n"
+prompt += "Section C: Long Questions\n"
+prompt += "Answer Key\n"
 
-INSTRUCTIONS:
-
-* Create MCQs with 4 options and correct answer
-* Add Bloom's taxonomy level
-* Provide short and long answers
-* Avoid repetition
-* Ensure academic correctness
-
-FORMAT:
-Section A: MCQs
-Section B: Short Questions
-Section C: Long Questions
-Answer Key
-
-Make output clean and structured.
-"""
 return prompt
+```
 
 # ==============================
 
-# GENERATE RESPONSE
+# API CALL
 
 # ==============================
 
-def get_ai_response(prompt):
+def get_response(prompt):
 try:
-response = openai.ChatCompletion.create(
+response = client.chat.completions.create(
 model="gpt-4o-mini",
 messages=[
-{"role": "system", "content": "You are a helpful academic assistant."},
 {"role": "user", "content": prompt}
 ],
 temperature=0.7
 )
+return response.choices[0].message.content
 
 ```
-    return response.choices[0].message["content"]
-
 except Exception as e:
-    return f"❌ Error: {str(e)}"
+    return f"Error: {e}"
 ```
 
 # ==============================
@@ -113,23 +92,21 @@ except Exception as e:
 
 # ==============================
 
-if generate_btn:
+if generate:
 if subject.strip() == "" or topics.strip() == "":
-st.warning("⚠️ Please fill all fields")
+st.warning("Please fill all fields")
 else:
-with st.spinner("⏳ Generating exam paper..."):
+with st.spinner("Generating..."):
 prompt = generate_prompt()
-result = get_ai_response(prompt)
+result = get_response(prompt)
 
 ```
-    st.success("✅ Exam Paper Generated!")
-
-    st.text_area("📄 Output", result, height=600)
+    st.success("Exam Paper Generated")
+    st.text_area("Output", result, height=500)
 
     st.download_button(
-        label="⬇️ Download as Text File",
-        data=result,
-        file_name="exam_paper.txt",
-        mime="text/plain"
+        "Download",
+        result,
+        file_name="exam.txt"
     )
 ```
