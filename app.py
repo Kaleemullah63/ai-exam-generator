@@ -1,5 +1,6 @@
 import streamlit as st
 from groq import Groq
+from fpdf import FPDF
 
 # -----------------------------
 # PAGE CONFIG
@@ -7,7 +8,7 @@ from groq import Groq
 st.set_page_config(page_title="AI Exam Generator", layout="wide")
 
 st.title("🧠 AI Exam Assistant for Teachers")
-st.subheader("Automated Exam Paper Generator using Groq AI")
+st.subheader("Professional Exam Paper Generator (AI Powered)")
 
 # -----------------------------
 # GROQ CLIENT
@@ -15,89 +16,117 @@ st.subheader("Automated Exam Paper Generator using Groq AI")
 client = Groq(api_key=st.secrets["GROQ_API_KEY"])
 
 # -----------------------------
-# SIDEBAR INPUTS
+# INPUT PANEL
 # -----------------------------
-st.sidebar.header("Exam Settings")
+st.sidebar.header("Exam Configuration")
 
 subject = st.sidebar.text_input("Subject", "Computer Science")
-topics = st.sidebar.text_area("Topics (comma separated)", "OOP, DBMS, Data Structures")
-
+topics = st.sidebar.text_area("Topics", "OOP, DBMS, Data Structures")
 difficulty = st.sidebar.selectbox("Difficulty Level", ["Easy", "Medium", "Hard"])
 
-mcq_count = st.sidebar.slider("Number of MCQs", 1, 20, 5)
-short_count = st.sidebar.slider("Number of Short Questions", 1, 10, 3)
-long_count = st.sidebar.slider("Number of Long Questions", 1, 5, 2)
+mcq_count = st.sidebar.slider("MCQs", 1, 20, 5)
+short_count = st.sidebar.slider("Short Questions", 1, 10, 3)
+long_count = st.sidebar.slider("Long Questions", 1, 5, 2)
 
 # -----------------------------
-# PROMPT BUILDER (NO * OUTPUT)
+# PROMPT
 # -----------------------------
 def build_prompt():
-    return (
-        "You are an expert academic exam paper generator.\n\n"
-        "Generate a complete exam paper in plain text ONLY.\n\n"
-        "CRITICAL FORMATTING RULES:\n"
-        "- Do NOT use asterisks (*)\n"
-        "- Do NOT use bullet points\n"
-        "- Do NOT use markdown\n"
-        "- Use numbered format only\n\n"
-        f"Subject: {subject}\n"
-        f"Topics: {topics}\n"
-        f"Difficulty Level: {difficulty}\n\n"
-        f"MCQs: {mcq_count}\n"
-        f"Short Questions: {short_count}\n"
-        f"Long Questions: {long_count}\n\n"
-        "STRUCTURE:\n"
-        "Section A: Multiple Choice Questions (MCQs)\n"
-        "Section B: Short Questions\n"
-        "Section C: Long Questions\n"
-        "Answer Key\n\n"
-        "MCQ FORMAT EXAMPLE:\n"
-        "1. Question text\n"
-        "A. option\n"
-        "B. option\n"
-        "C. option\n"
-        "D. option\n"
-        "Correct Answer: B\n"
-    )
+    return f"""
+You are an expert academic examiner.
+
+Generate a complete exam paper in STRICT plain text format.
+
+Subject: {subject}
+Topics: {topics}
+Difficulty: {difficulty}
+
+MCQs: {mcq_count}
+Short Questions: {short_count}
+Long Questions: {long_count}
+
+RULES:
+- No asterisks (*)
+- No bullet points
+- No markdown
+- Use numbered format only
+
+FORMAT:
+Section A: MCQs
+Section B: Short Questions
+Section C: Long Questions
+Answer Key
+
+Each MCQ must include:
+1. Question
+A. Option
+B. Option
+C. Option
+D. Option
+Correct Answer: X
+"""
 
 # -----------------------------
-# GROQ API CALL
+# GROQ CALL
 # -----------------------------
 def generate_exam(prompt):
-    try:
-        response = client.chat.completions.create(
-            model="llama-3.1-8b-instant",
-            messages=[
-                {"role": "user", "content": prompt}
-            ],
-            temperature=0.7
-        )
-        return response.choices[0].message.content
-
-    except Exception as e:
-        return f"Error: {str(e)}"
+    response = client.chat.completions.create(
+        model="llama-3.1-8b-instant",
+        messages=[{"role": "user", "content": prompt}],
+        temperature=0.7
+    )
+    return response.choices[0].message.content
 
 # -----------------------------
-# MAIN EXECUTION
+# PDF GENERATOR
+# -----------------------------
+def create_pdf(text):
+    pdf = FPDF()
+    pdf.add_page()
+    pdf.set_font("Arial", size=10)
+
+    for line in text.split("\n"):
+        pdf.cell(200, 6, txt=line[:100], ln=True)
+
+    pdf_output = "exam_paper.pdf"
+    pdf.output(pdf_output)
+    return pdf_output
+
+# -----------------------------
+# GENERATE BUTTON
 # -----------------------------
 if st.sidebar.button("Generate Exam Paper"):
 
     if subject.strip() == "" or topics.strip() == "":
-        st.warning("Please fill all required fields in sidebar")
+        st.warning("Please fill all fields")
 
     else:
-        with st.spinner("Generating exam paper using AI..."):
+        with st.spinner("Generating exam paper..."):
 
             prompt = build_prompt()
             result = generate_exam(prompt)
 
-        st.success("Exam Paper Generated Successfully")
+        st.success("Exam Generated Successfully")
 
-        st.text_area("Generated Exam Paper", result, height=600)
+        st.text_area("Generated Paper", result, height=500)
 
+        # -------------------------
+        # DOWNLOAD TXT
+        # -------------------------
         st.download_button(
-            label="Download Exam Paper",
-            data=result,
-            file_name="exam_paper.txt",
-            mime="text/plain"
+            "Download TXT",
+            result,
+            file_name="exam.txt"
         )
+
+        # -------------------------
+        # DOWNLOAD PDF
+        # -------------------------
+        pdf_file = create_pdf(result)
+
+        with open(pdf_file, "rb") as f:
+            st.download_button(
+                "Download PDF",
+                f,
+                file_name="exam.pdf"
+            )
