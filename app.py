@@ -7,7 +7,7 @@ from groq import Groq
 st.set_page_config(page_title="AI Exam Generator", layout="wide")
 
 st.title("🧠 AI Exam Assistant for Teachers")
-st.subheader("Exam Paper Generator using Groq AI")
+st.subheader("Automated Exam Paper Generator using Groq AI")
 
 # -----------------------------
 # GROQ CLIENT
@@ -17,7 +17,7 @@ client = Groq(api_key=st.secrets["GROQ_API_KEY"])
 # -----------------------------
 # SIDEBAR INPUTS
 # -----------------------------
-st.sidebar.header("Exam Configuration")
+st.sidebar.header("Exam Settings")
 
 subject = st.sidebar.text_input("Subject", "Computer Science")
 topics = st.sidebar.text_area("Topics (comma separated)", "OOP, DBMS, Data Structures")
@@ -29,28 +29,35 @@ short_count = st.sidebar.slider("Number of Short Questions", 1, 10, 3)
 long_count = st.sidebar.slider("Number of Long Questions", 1, 5, 2)
 
 # -----------------------------
-# PROMPT BUILDER
+# PROMPT BUILDER (NO * OUTPUT)
 # -----------------------------
 def build_prompt():
     return (
-        "You are an expert academic exam paper setter.\n\n"
-        "Generate a complete exam paper with the following details:\n\n"
+        "You are an expert academic exam paper generator.\n\n"
+        "Generate a complete exam paper in plain text ONLY.\n\n"
+        "CRITICAL FORMATTING RULES:\n"
+        "- Do NOT use asterisks (*)\n"
+        "- Do NOT use bullet points\n"
+        "- Do NOT use markdown\n"
+        "- Use numbered format only\n\n"
         f"Subject: {subject}\n"
         f"Topics: {topics}\n"
         f"Difficulty Level: {difficulty}\n\n"
         f"MCQs: {mcq_count}\n"
         f"Short Questions: {short_count}\n"
         f"Long Questions: {long_count}\n\n"
-        "Requirements:\n"
-        "- MCQs must have 4 options (A, B, C, D) with correct answer\n"
-        "- Include Bloom's Taxonomy level for each question\n"
-        "- Short questions must include answers\n"
-        "- Long questions must include detailed answers\n\n"
-        "Format:\n"
-        "Section A: MCQs\n"
+        "STRUCTURE:\n"
+        "Section A: Multiple Choice Questions (MCQs)\n"
         "Section B: Short Questions\n"
         "Section C: Long Questions\n"
-        "Answer Key"
+        "Answer Key\n\n"
+        "MCQ FORMAT EXAMPLE:\n"
+        "1. Question text\n"
+        "A. option\n"
+        "B. option\n"
+        "C. option\n"
+        "D. option\n"
+        "Correct Answer: B\n"
     )
 
 # -----------------------------
@@ -71,7 +78,7 @@ def generate_exam(prompt):
         return f"Error: {str(e)}"
 
 # -----------------------------
-# MAIN BUTTON
+# MAIN EXECUTION
 # -----------------------------
 if st.sidebar.button("Generate Exam Paper"):
 
