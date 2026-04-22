@@ -1,37 +1,40 @@
 import streamlit as st
-from openai import OpenAI
+from groq import Groq
 
+# -----------------------------
+# PAGE CONFIG
+# -----------------------------
 st.set_page_config(page_title="AI Exam Generator", layout="wide")
 
 st.title("🧠 AI Exam Assistant for Teachers")
-st.subheader("Automated Exam Paper Generator using AI")
+st.subheader("Exam Paper Generator using Groq AI")
 
-# ------------------------------
-# API KEY
-# ------------------------------
-client = OpenAI(api_key=st.secrets["OPENAI_API_KEY"])
+# -----------------------------
+# GROQ CLIENT
+# -----------------------------
+client = Groq(api_key=st.secrets["GROQ_API_KEY"])
 
-# ------------------------------
-# INPUTS
-# ------------------------------
-st.sidebar.header("Exam Settings")
+# -----------------------------
+# SIDEBAR INPUTS
+# -----------------------------
+st.sidebar.header("Exam Configuration")
 
 subject = st.sidebar.text_input("Subject", "Computer Science")
 topics = st.sidebar.text_area("Topics (comma separated)", "OOP, DBMS, Data Structures")
 
 difficulty = st.sidebar.selectbox("Difficulty Level", ["Easy", "Medium", "Hard"])
 
-mcq_count = st.sidebar.slider("MCQs", 1, 20, 5)
-short_count = st.sidebar.slider("Short Questions", 1, 10, 3)
-long_count = st.sidebar.slider("Long Questions", 1, 5, 2)
+mcq_count = st.sidebar.slider("Number of MCQs", 1, 20, 5)
+short_count = st.sidebar.slider("Number of Short Questions", 1, 10, 3)
+long_count = st.sidebar.slider("Number of Long Questions", 1, 5, 2)
 
-# ------------------------------
+# -----------------------------
 # PROMPT BUILDER
-# ------------------------------
+# -----------------------------
 def build_prompt():
     return (
-        "You are an expert exam paper generator.\n\n"
-        "Generate a complete exam paper.\n\n"
+        "You are an expert academic exam paper setter.\n\n"
+        "Generate a complete exam paper with the following details:\n\n"
         f"Subject: {subject}\n"
         f"Topics: {topics}\n"
         f"Difficulty Level: {difficulty}\n\n"
@@ -39,7 +42,7 @@ def build_prompt():
         f"Short Questions: {short_count}\n"
         f"Long Questions: {long_count}\n\n"
         "Requirements:\n"
-        "- MCQs must have 4 options with correct answer\n"
+        "- MCQs must have 4 options (A, B, C, D) with correct answer\n"
         "- Include Bloom's Taxonomy level for each question\n"
         "- Short questions must include answers\n"
         "- Long questions must include detailed answers\n\n"
@@ -50,13 +53,13 @@ def build_prompt():
         "Answer Key"
     )
 
-# ------------------------------
-# API CALL
-# ------------------------------
-def get_response(prompt):
+# -----------------------------
+# GROQ API CALL
+# -----------------------------
+def generate_exam(prompt):
     try:
         response = client.chat.completions.create(
-            model="gpt-3.5-turbo",
+            model="llama-3.1-8b-instant",
             messages=[
                 {"role": "user", "content": prompt}
             ],
@@ -67,23 +70,23 @@ def get_response(prompt):
     except Exception as e:
         return f"Error: {str(e)}"
 
-# ------------------------------
-# GENERATE BUTTON
-# ------------------------------
+# -----------------------------
+# MAIN BUTTON
+# -----------------------------
 if st.sidebar.button("Generate Exam Paper"):
 
     if subject.strip() == "" or topics.strip() == "":
-        st.warning("Please fill in Subject and Topics")
+        st.warning("Please fill all required fields in sidebar")
 
     else:
-        with st.spinner("Generating exam paper... please wait"):
+        with st.spinner("Generating exam paper using AI..."):
 
             prompt = build_prompt()
-            result = get_response(prompt)
+            result = generate_exam(prompt)
 
         st.success("Exam Paper Generated Successfully")
 
-        st.text_area("Generated Paper", result, height=600)
+        st.text_area("Generated Exam Paper", result, height=600)
 
         st.download_button(
             label="Download Exam Paper",
