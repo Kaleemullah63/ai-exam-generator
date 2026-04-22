@@ -20,7 +20,6 @@ topics = st.text_input("Enter Topics")
 
 if st.button("Generate Exam Paper"):
 
-```
 # Create prompt
 prompt = "Generate an exam paper for subject: " + subject + " with topics: " + topics
 
