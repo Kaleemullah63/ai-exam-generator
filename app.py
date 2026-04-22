@@ -53,7 +53,7 @@ generate_btn = st.sidebar.button("🚀 Generate Exam Paper")
 # ==============================
 
 def generate_prompt():
-return f"""
+prompt = f"""
 You are an expert academic assistant and professional exam paper setter with deep knowledge of Bloom's Taxonomy.
 
 Generate a COMPLETE exam paper.
@@ -81,6 +81,7 @@ Answer Key
 
 Make output clean and structured.
 """
+return prompt
 
 # ==============================
 
